@@ -1,4 +1,4 @@
-# 🧠 Structured ASIC DD2 Project  
+# Structured ASIC DD2 Project  
 **Supervised by Dr. Mohamed Shalan**  
 **Team Members:** Ahmed Elkhodary · Habiba Seif · Laila Elsayed  
 
