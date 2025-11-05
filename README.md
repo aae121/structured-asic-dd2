@@ -1,4 +1,4 @@
-# Structured ASIC DD2 Project  
+# End-to-End Structured ASIC PnR Flow 
 **Supervised by Dr. Mohamed Shalan**  
 **Team Members:** Ahmed Elkhodary · Habiba Seif · Laila Elsayed  
 
