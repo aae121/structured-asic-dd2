@@ -27,6 +27,20 @@ import sys
 from parse_fabric import load_fabric_db
 from parse_design import load_logical_db
 
+# Cell type normalization mapping (design cell type -> fabric cell type)
+CELL_TYPE_MAP = {
+    'sky130_fd_sc_hd__nand2_2': 'NAND',
+    'sky130_fd_sc_hd__clkinv_2': 'INV',
+    'sky130_fd_sc_hd__clkbuf_4': 'BUF',
+    'sky130_fd_sc_hd__conb_1': 'CONB',
+    'sky130_fd_sc_hd__dfbbp_1': 'DFBBP',
+    'sky130_fd_sc_hd__or2_2': 'OR',
+    # Add more mappings as needed
+}
+
+def normalize_cell_type(cell_type):
+    return CELL_TYPE_MAP.get(cell_type, cell_type)
+
 def validate_fabric_vs_design(fabric_dir: str, design_path: str) -> str:
     """
     Validate if the logical design fits on the fabric. Return the report as a string.
@@ -38,7 +52,12 @@ def validate_fabric_vs_design(fabric_dir: str, design_path: str) -> str:
 
     # Gather available slots by type
     fabric_slots = {k: len(v) for k, v in fabric_db.get('cells_by_type', {}).items()}
-    logical_cells = logical_db.get('cell_count_by_type', {})
+    logical_cells_raw = logical_db.get('cell_count_by_type', {})
+    # Normalize logical cell types to fabric cell types
+    logical_cells = {}
+    for cell_type, count in logical_cells_raw.items():
+        norm_type = normalize_cell_type(cell_type)
+        logical_cells[norm_type] = logical_cells.get(norm_type, 0) + count
 
     # Prepare report
     lines = []
