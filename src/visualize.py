@@ -3,16 +3,14 @@ visualize.py
 
 Phase 1 Visualization: Structured ASIC Fabric Layout Plotter
 
-This script visualizes the physical layout of the Structured ASIC fabric.
-- Draws die/core boundaries (if available from pins.yaml)
-- Plots all fabric slots as semi-transparent rectangles, color-coded by cell type
-- Plots I/O pins as labeled points along the edges
-- Saves the output image to build/fabric_layout.png
+Generates a clear, error-free plot of the Structured ASIC fabric:
+- Draws die/core boundaries (if present)
+- Plots all valid slots (color-coded by cell type)
+- Plots I/O pins as labeled red dots
+- Saves result to build/fabric_layout.png
 
 Usage:
-    python src/visualize.py <fabric_dir>
-
-Author: [Your Name]
+    python src/visualize.py ../fabric
 """
 
 import os
@@ -20,64 +18,85 @@ import sys
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from parse_fabric import load_fabric_db
-import numpy as np
+
 
 def plot_fabric(fabric_dir: str, out_path: str = "build/fabric_layout.png"):
+    # ---- Load data ----
     fabric_cells_path = os.path.join(fabric_dir, "fabric_cells.yaml")
     pins_path = os.path.join(fabric_dir, "pins.yaml")
+
     fabric_db = load_fabric_db(fabric_cells_path, pins_path)
+    slots = fabric_db.get("slots", {})
+    pins = fabric_db.get("pins", {})
+    bounds = fabric_db.get("bounds")
 
-    slots = fabric_db["slots"]
-    pins = fabric_db["pins"]
-    bounds = fabric_db.get("bounds", None)
-
-    # Assign a color to each cell type
-    cell_types = sorted({slot["type"] for slot in slots.values()})
-    colors = plt.cm.get_cmap("tab20", len(cell_types))
-    type_to_color = {t: colors(i) for i, t in enumerate(cell_types)}
+    # ---- Prepare plotting ----
+    cell_types = sorted({slot.get("type", "UNKNOWN") for slot in slots.values()})
+    cmap = plt.colormaps.get_cmap("tab20", len(cell_types))
+    type_colors = {t: cmap(i) for i, t in enumerate(cell_types)}
 
     fig, ax = plt.subplots(figsize=(10, 10))
 
-    # Draw die/core boundaries if available
+    # ---- Draw die/core boundary ----
     if bounds:
-        ax.add_patch(Rectangle((bounds["xmin"], bounds["ymin"]),
-                              bounds["xmax"] - bounds["xmin"],
-                              bounds["ymax"] - bounds["ymin"],
-                              fill=False, edgecolor="black", linewidth=2, label="Die/Core Bounds"))
+        ax.add_patch(Rectangle(
+            (bounds["xmin"], bounds["ymin"]),
+            bounds["xmax"] - bounds["xmin"],
+            bounds["ymax"] - bounds["ymin"],
+            fill=False, edgecolor="black", linewidth=2, label="Die/Core"
+        ))
 
-    # Plot all slots
-    for slot_name, slot in slots.items():
-        x = slot.get("x", 0)
-        y = slot.get("y", 0)
-        cell_type = slot.get("type", "UNKNOWN")
-        color = type_to_color.get(cell_type, (0.5, 0.5, 0.5, 0.3))
-        ax.add_patch(Rectangle((x-0.5, y-0.5), 1, 1, color=color, alpha=0.4, label=cell_type if slot_name == 0 else None))
+    # ---- Plot each slot ----
+    skipped = 0
+    for name, slot in slots.items():
+        x, y = slot.get("x"), slot.get("y")
 
-    # Plot pins as labeled points
-    for pin_name, pin in pins.items():
-        x = pin.get("x", 0)
-        y = pin.get("y", 0)
-        ax.plot(x, y, marker="o", color="red", markersize=6)
-        ax.text(x, y, pin_name, fontsize=8, ha="center", va="center", color="red", bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', boxstyle='round,pad=0.2'))
+        # Ensure coordinates are numeric
+        if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+            skipped += 1
+            continue
 
-    # Legend for cell types
-    handles = [Rectangle((0,0),1,1, color=type_to_color[t], alpha=0.4) for t in cell_types]
-    ax.legend(handles, cell_types, title="Cell Types", loc="upper right", bbox_to_anchor=(1.15, 1))
+        ctype = slot.get("type", "UNKNOWN")
+        color = type_colors.get(ctype, (0.5, 0.5, 0.5, 0.3))
+        ax.add_patch(Rectangle((x - 0.5, y - 0.5), 1, 1, color=color, alpha=0.4))
 
-    ax.set_aspect('equal')
-    ax.set_xlabel("X (microns or site index)")
-    ax.set_ylabel("Y (microns or site index)")
+    if skipped:
+        print(f"⚠️ Skipped {skipped} invalid slots with missing coordinates")
+
+    # ---- Plot pins ----
+    for pname, pin in pins.items():
+        x, y = pin.get("x"), pin.get("y")
+        if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+            continue
+        ax.plot(x, y, "ro", markersize=5)
+        ax.text(x, y, pname, fontsize=6, color="red",
+                ha="center", va="center",
+                bbox=dict(facecolor="white", alpha=0.6, edgecolor="none"))
+
+    # ---- Final layout setup ----
+    ax.set_aspect("equal")
+    ax.set_xlabel("X coordinate")
+    ax.set_ylabel("Y coordinate")
     ax.set_title("Structured ASIC Fabric Layout")
-    plt.tight_layout()
 
+    # Legend
+    handles = [Rectangle((0, 0), 1, 1, color=type_colors[t], alpha=0.4)
+               for t in cell_types]
+    ax.legend(handles, cell_types, title="Cell Types", loc="upper right",
+              bbox_to_anchor=(1.25, 1))
+
+    # ---- Save output ----
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    plt.tight_layout()
     plt.savefig(out_path, dpi=300)
     plt.close()
-    print(f"Saved fabric layout visualization to {out_path}")
+    print(f"✅ Saved fabric layout visualization to {out_path}")
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python src/visualize.py <fabric_dir>")
         sys.exit(1)
+
     fabric_dir = sys.argv[1]
     plot_fabric(fabric_dir)
