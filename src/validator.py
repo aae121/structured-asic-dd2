@@ -1,0 +1,108 @@
+"""
+validator.py
+
+Phase 1 - Step 3: Fabric vs Logical Design Validator for Structured ASIC Project
+
+This script validates whether a mapped logical design can fit on a given fabric.
+It compares the required cell counts by type (from the design) to the available
+slots by type (from the fabric YAMLs), and generates a utilization report.
+
+Usage:
+    python src/validator.py <fabric_dir> <design_json>
+
+Arguments:
+    fabric_dir: Directory containing fabric_cells.yaml and pins.yaml
+    design_json: Path to mapped JSON design file (e.g., designs/6502_mapped.json)
+
+Outputs:
+    - Prints a utilization report to stdout
+    - Saves the report to build/<design_name>/validation_report.txt
+    - Exits with error if any cell type exceeds available slots
+
+Author: [Your Name]
+"""
+
+import os
+import sys
+from parse_fabric import load_fabric_db
+from parse_design import load_logical_db
+
+# Cell type normalization mapping (design cell type -> fabric cell type)
+CELL_TYPE_MAP = {
+    'sky130_fd_sc_hd__nand2_2': 'NAND',
+    'sky130_fd_sc_hd__clkinv_2': 'INV',
+    'sky130_fd_sc_hd__clkbuf_4': 'BUF',
+    'sky130_fd_sc_hd__conb_1': 'CONB',
+    'sky130_fd_sc_hd__dfbbp_1': 'DFBBP',
+    'sky130_fd_sc_hd__or2_2': 'OR',
+    # Add more mappings as needed
+}
+
+def normalize_cell_type(cell_type):
+    return CELL_TYPE_MAP.get(cell_type, cell_type)
+
+def validate_fabric_vs_design(fabric_dir: str, design_path: str) -> str:
+    """
+    Validate if the logical design fits on the fabric. Return the report as a string.
+    Raise SystemExit(1) if not enough slots for any cell type.
+    """
+    # Load databases
+    fabric_db = load_fabric_db(os.path.join(fabric_dir, "fabric_cells.yaml"), os.path.join(fabric_dir, "pins.yaml"))
+    logical_db = load_logical_db(design_path)
+
+    # Gather available slots by type
+    fabric_slots = {k: len(v) for k, v in fabric_db.get('cells_by_type', {}).items()}
+    logical_cells_raw = logical_db.get('cell_count_by_type', {})
+    # Normalize logical cell types to fabric cell types
+    logical_cells = {}
+    for cell_type, count in logical_cells_raw.items():
+        norm_type = normalize_cell_type(cell_type)
+        logical_cells[norm_type] = logical_cells.get(norm_type, 0) + count
+
+    # Prepare report
+    lines = []
+    lines.append(f"Fabric Utilization Report for {os.path.basename(design_path)}")
+    lines.append("")
+    header = f"{'Cell Type':<12} {'Used':>8} / {'Available':<8} Utilization"
+    lines.append(header)
+    lines.append("-" * len(header))
+    error_found = False
+    for cell_type in sorted(set(fabric_slots) | set(logical_cells)):
+        used = logical_cells.get(cell_type, 0)
+        available = fabric_slots.get(cell_type, 0)
+        utilization = (used / available * 100) if available else 0.0
+        line = f"{cell_type:<12} {used:>8} / {available:<8} "
+        if available:
+            line += f"({utilization:.1f}%)"
+        else:
+            line += "(N/A)"
+        lines.append(line)
+        if used > available:
+            lines.append(f"ERROR: Not enough slots for cell type '{cell_type}' (needed {used}, available {available})")
+            error_found = True
+    report = "\n".join(lines)
+    if error_found:
+        print(report)
+        print("\n❌ Validation failed: Design does not fit on fabric.")
+        sys.exit(1)
+    else:
+        print(report)
+        print("\n✅ Validation passed: Design is buildable on fabric.")
+    return report
+
+def save_report(report: str, design_path: str):
+    design_name = os.path.splitext(os.path.basename(design_path))[0]
+    out_dir = os.path.join("build", design_name)
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, "validation_report.txt")
+    with open(out_path, "w") as f:
+        f.write(report)
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python src/validator.py <fabric_dir> <design_json>")
+        sys.exit(1)
+    fabric_dir = sys.argv[1]
+    design_path = sys.argv[2]
+    report = validate_fabric_vs_design(fabric_dir, design_path)
+    save_report(report, design_path)
