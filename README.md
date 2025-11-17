@@ -1,6 +1,6 @@
 # End-to-End Structured ASIC PnR Flow 
 **Supervised by Dr. Mohamed Shalan**  
-**Team Members:** Ahmed Elkhodary · Habiba Seif · Laila Elsayed  
+**Team Members:** Ahmed Elkhodary · Habiba Seif · Laila Sayed  
 
 ---
 
