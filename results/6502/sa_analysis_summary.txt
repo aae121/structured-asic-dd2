@@ -1,0 +1,46 @@
+
+# SA Knob Exploration Analysis
+
+## Experiment Overview
+- Total configurations tested: 9
+- Cooling rates (α): [0.8, 0.85, 0.9, 0.95, 0.99]
+- Moves per temperature: [100, 200, 400]
+- Runtime range: 58.36s - 953.63s
+- HPWL range: 328070 - 503342 site units
+
+## Key Findings
+
+### Best HPWL Configuration:
+- Cooling Rate (α): 0.99
+- Moves per Temp: 200
+- Final HPWL: 328070 site units
+- Runtime: 953.63s
+
+### Fastest Configuration:
+- Cooling Rate (α): 0.85
+- Moves per Temp: 200
+- Final HPWL: 492457 site units
+- Runtime: 58.36s
+
+### Recommended Balanced Configuration:
+- Cooling Rate (α): 0.95
+- Moves per Temp: 200
+- Final HPWL: 440976 site units
+- Runtime: 206.87s
+- Balance Score: 0.810
+
+## Pareto Frontier Analysis
+The Pareto frontier contains 5 configurations that represent optimal trade-offs between quality and runtime.
+
+### Parameter Correlations:
+- Slower cooling (higher α): Generally improves HPWL but increases runtime
+- More moves per temperature: Improves HPWL but significantly increases runtime
+- Initial temperature effect: Fixed at 10.0 in experiments
+- Refine probability effect: Tested at 0.5, 0.7, and 0.9
+
+## Recommendations
+1. **For best quality**: Use α=0.99, moves=200 (accept longer runtime)
+2. **For fastest execution**: Use α=0.85, moves=200 (accept quality trade-off)
+3. **For balanced performance**: Use α=0.95, moves=200 (recommended default)
+
+The analysis shows a clear trade-off between solution quality (HPWL) and runtime, with the Pareto frontier providing guidance for selecting appropriate parameters based on project requirements.

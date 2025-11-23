@@ -1,0 +1,70 @@
+
+# 🔬 SA Knob Exploration Analysis
+
+## 📊 Experiment Overview
+
+| Metric | Value |
+|--------|-------|
+| **Total Configurations** | 9 |
+| **Cooling Rates (α)** | 0.80, 0.85, 0.90, 0.95, 0.99 |
+| **Moves per Temperature** | 100, 200, 400 |
+| **Runtime Range** | 58.36s - 953.63s |
+| **HPWL Range** | 328,070 - 503,342 site units |
+
+---
+
+## 🎯 Key Findings
+
+### 🏆 Best HPWL Configuration
+```
+Cooling Rate (α):     0.99
+Moves per Temp:       200
+Final HPWL:           328,070 site units
+Runtime:              953.63s
+```
+
+### ⚡ Fastest Configuration
+```
+Cooling Rate (α):     0.85
+Moves per Temp:       200
+Final HPWL:           492,457 site units
+Runtime:              58.36s
+```
+
+### ⚖️ Recommended Balanced Configuration
+```
+Cooling Rate (α):     0.95
+Moves per Temp:       200
+Final HPWL:           440,976 site units
+Runtime:              206.87s
+Balance Score:        0.810
+```
+
+---
+
+## 📈 Pareto Frontier Analysis
+
+The Pareto frontier contains **5 configurations** that represent optimal trade-offs between quality and runtime.
+
+### 🔗 Parameter Correlations
+
+| Parameter | Effect on HPWL | Effect on Runtime |
+|-----------|----------------|-------------------|
+| **Slower cooling** (higher α) | ✅ Improves | ⬆️ Increases |
+| **More moves/temp** | ✅ Improves | ⬆️ Significantly increases |
+| **Initial temperature** | Fixed at 10.0 | Fixed at 10.0 |
+| **Refine probability** | Tested: 0.5, 0.7, 0.9 | Variable impact |
+
+---
+
+## 💡 Recommendations
+
+| Use Case | Configuration | Rationale |
+|----------|---------------|-----------|
+| **🏆 Best Quality** | α=0.99, moves=200 | Accept longer runtime for optimal HPWL |
+| **⚡ Fastest Execution** | α=0.85, moves=200 | Accept quality trade-off for speed |
+| **⚖️ Balanced Performance** | α=0.95, moves=200 | **Recommended default** - good quality/time balance |
+
+---
+
+> **Note**: All experiments used initial temperature T₀ = 10.0 and tested refine probabilities of 0.5, 0.7, and 0.9.
