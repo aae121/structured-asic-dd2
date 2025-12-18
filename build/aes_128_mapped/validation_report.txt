@@ -1,0 +1,12 @@
+Fabric Utilization Report for aes_128_mapped.json
+
+Cell Type        Used / Available Utilization
+---------------------------------------------
+BUF              4523 / 9720     (46.5%)
+CONB                4 / 9720     (0.0%)
+DECAP               0 / 19440    (0.0%)
+DFBBP            5018 / 6480     (77.4%)
+INV              6352 / 12960    (49.0%)
+NAND            46283 / 48600    (95.2%)
+OR              23639 / 25920    (91.2%)
+TAP                 0 / 25920    (0.0%)

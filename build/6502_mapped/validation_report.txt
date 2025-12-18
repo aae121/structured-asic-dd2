@@ -1,0 +1,12 @@
+Fabric Utilization Report for 6502_mapped.json
+
+Cell Type        Used / Available Utilization
+---------------------------------------------
+BUF               322 / 9720     (3.3%)
+CONB                3 / 9720     (0.0%)
+DECAP               0 / 19440    (0.0%)
+DFBBP             143 / 6480     (2.2%)
+INV               360 / 12960    (2.8%)
+NAND             1228 / 48600    (2.5%)
+OR                843 / 25920    (3.3%)
+TAP                 0 / 25920    (0.0%)
